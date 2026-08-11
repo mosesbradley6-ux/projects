@@ -68,6 +68,7 @@ variable "amazon_linux_2_ami_id" {
         --region eu-west-2 --output text
   EOT
   type        = string
+  default     = "ami-0bdc7d025135d7b49"
 }
 
 # --- Web tier (public-facing ALB + ASG) ---
