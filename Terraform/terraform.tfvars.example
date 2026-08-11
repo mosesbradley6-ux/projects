@@ -1,7 +1,7 @@
 # Copy this file to terraform.tfvars and fill in your own values.
 # Do NOT commit terraform.tfvars (it will contain secrets) - it's already in .gitignore.
 
-aws_region   = "eu-west-2"
+aws_region   = "us-east-1"
 project_name = "sample3tier"
 environment  = "test"
 
@@ -13,8 +13,8 @@ environment  = "test"
 # them entirely. If your account isn't restricted, the defaults below are
 # fine to leave as-is (or delete these lines to fall back to the defaults
 # in variables.tf).
-availability_zones    = ["eu-west-2a", "eu-west-2b", "eu-west-2c"]
-amazon_linux_2_ami_id = "ami-0bdc7d025135d7b49"
+availability_zones    = ["us-east-1a", "us-east-1b", "us-east-1c"]
+amazon_linux_2_ami_id = "ami-xxxxxxxxxxxxxxxxx" # replace with a current AMI ID for your region - see variables.tf for how to look one up
 
 key_name         = ""              # existing EC2 key pair name, or leave blank
 ssh_allowed_cidr = "0.0.0.0/0"     # restrict this to your IP in real use, e.g. "203.0.113.5/32"

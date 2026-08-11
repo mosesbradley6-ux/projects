@@ -1,7 +1,7 @@
-# Sample 3-Tier Web Application — AWS (eu-west-2)
+# Sample 3-Tier Web Application — AWS (us-east-1)
 
 Terraform root module that provisions a classic 3-tier architecture in a single
-region (`eu-west-2` by default) using Amazon Linux 2 instances:
+region (`us-east-1` by default) using Amazon Linux 2 instances:
 
 ```
 Internet
@@ -84,8 +84,8 @@ Terraform patterns of looking these up dynamically
 permissions. This config avoids those two calls entirely and takes the values
 as plain variables instead:
 
-- `availability_zones` — defaults to `["eu-west-2a", "eu-west-2b", "eu-west-2c"]`.
-  Only change this if you deploy somewhere other than `eu-west-2`.
+- `availability_zones` — defaults to `["us-east-1a", "us-east-1b", "us-east-1c"]`.
+  Only change this if you deploy somewhere other than `us-east-1`.
 - `amazon_linux_2_ami_id` — **no default, you must set this.** Find a current
   AMI ID for your region via the EC2 console (Launch Instance → search
   "Amazon Linux 2 AMI" → copy the AMI ID shown), or, if `ec2:DescribeImages`
@@ -95,7 +95,7 @@ as plain variables instead:
     --filters "Name=name,Values=amzn2-ami-hvm-2.0.*-x86_64-gp2" \
               "Name=state,Values=available" \
     --query "reverse(sort_by(Images, &CreationDate))[:1].ImageId" \
-    --region eu-west-2 --output text
+    --region us-east-1 --output text
   ```
   Set it in `terraform.tfvars`:
   ```hcl

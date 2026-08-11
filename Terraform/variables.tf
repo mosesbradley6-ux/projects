@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region to deploy into"
   type        = string
-  default     = "eu-west-2"
+  default     = "us-east-1"
 }
 
 variable "project_name" {
@@ -35,11 +35,11 @@ variable "availability_zones" {
     AZs to use, in order. Some sandbox/training accounts attach a Service
     Control Policy that explicitly denies ec2:DescribeAvailabilityZones, which
     breaks the usual `data "aws_availability_zones"` lookup. Supplying the
-    list directly avoids that API call entirely. Defaults cover eu-west-2;
+    list directly avoids that API call entirely. Defaults cover us-east-1;
     change these if you deploy to a different region.
   EOT
   type        = list(string)
-  default     = ["eu-west-2a", "eu-west-2b", "eu-west-2c"]
+  default     = ["us-east-1a", "us-east-1b", "us-east-1c"]
 }
 
 variable "single_nat_gateway" {
@@ -65,10 +65,9 @@ variable "amazon_linux_2_ami_id" {
         --filters "Name=name,Values=amzn2-ami-hvm-2.0.*-x86_64-gp2" \
                   "Name=state,Values=available" \
         --query "reverse(sort_by(Images, &CreationDate))[:1].ImageId" \
-        --region eu-west-2 --output text
+        --region us-east-1 --output text
   EOT
   type        = string
-  default     = "ami-0bdc7d025135d7b49"
 }
 
 # --- Web tier (public-facing ALB + ASG) ---
