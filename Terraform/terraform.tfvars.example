@@ -1,8 +1,0 @@
-aws_region   = "eu-west-2"
-project_name = "tf-3tier-demo"
-environment  = "dev"
-vpc_cidr     = "10.0.0.0/16"
-
-db_name     = "appdb"
-db_username = "appuser"
-db_password = "ChangeMe123!"
