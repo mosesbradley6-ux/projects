@@ -10,6 +10,11 @@ variable "public_subnet_ids" {
   type = list(string)
 }
 
+variable "ami_id" {
+  description = "AMI ID to launch (passed in from root - see root variables.tf for why this isn't a data source)."
+  type        = string
+}
+
 variable "instance_type" {
   type = string
 }
@@ -33,10 +38,4 @@ variable "asg_max_size" {
 
 variable "asg_desired_capacity" {
   type = number
-}
-
-variable "app_alb_dns_name" {
-  description = "DNS name of the internal app-tier ALB, used in the sample web page/user data"
-  type        = string
-  default     = ""
 }

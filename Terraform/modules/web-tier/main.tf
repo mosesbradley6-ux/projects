@@ -1,12 +1,13 @@
-data "aws_ssm_parameter" "amazon_linux_2" {
-  name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gebs"
-}
+# NOTE: No `data "aws_ssm_parameter" "amazon_linux_2" {}` here on purpose.
+# In sandbox/training accounts, ssm:GetParameter is sometimes explicitly
+# denied by an org-level SCP, which breaks the usual "latest AMI" lookup.
+# Instead we take the AMI ID as an input variable from root (var.ami_id).
 
-# --- Security Groups ---
+# --- Security groups ---
 
 resource "aws_security_group" "alb" {
-  name_prefix = "${var.project_name}-web-alb-"
-  description = "Allow inbound HTTP/HTTPS from the internet"
+  name        = "${var.project_name}-web-alb-sg"
+  description = "Web ALB - allow HTTP from the internet"
   vpc_id      = var.vpc_id
 
   ingress {
@@ -27,19 +28,15 @@ resource "aws_security_group" "alb" {
   tags = {
     Name = "${var.project_name}-web-alb-sg"
   }
-
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
-resource "aws_security_group" "web" {
-  name_prefix = "${var.project_name}-web-instance-"
-  description = "Allow HTTP from web ALB and SSH from allowed CIDR"
+resource "aws_security_group" "instance" {
+  name        = "${var.project_name}-web-instance-sg"
+  description = "Web tier instances - allow HTTP from web ALB, SSH from allowed CIDR"
   vpc_id      = var.vpc_id
 
   ingress {
-    description     = "HTTP from ALB"
+    description     = "HTTP from web ALB"
     from_port       = 80
     to_port         = 80
     protocol        = "tcp"
@@ -63,10 +60,6 @@ resource "aws_security_group" "web" {
 
   tags = {
     Name = "${var.project_name}-web-instance-sg"
-  }
-
-  lifecycle {
-    create_before_destroy = true
   }
 }
 
@@ -96,7 +89,6 @@ resource "aws_lb_target_group" "web" {
     unhealthy_threshold = 3
     interval            = 15
     timeout             = 5
-    matcher             = "200-399"
   }
 
   tags = {
@@ -115,20 +107,15 @@ resource "aws_lb_listener" "web_http" {
   }
 }
 
-# --- Launch Template + Auto Scaling Group ---
+# --- Launch template + ASG ---
 
 resource "aws_launch_template" "web" {
   name_prefix   = "${var.project_name}-web-"
-  image_id      = data.aws_ssm_parameter.amazon_linux_2.value
+  image_id      = var.ami_id
   instance_type = var.instance_type
   key_name      = var.key_name != "" ? var.key_name : null
 
-  vpc_security_group_ids = [aws_security_group.web.id]
-
-  metadata_options {
-    http_tokens   = "required" # enforce IMDSv2
-    http_endpoint = "enabled"
-  }
+  vpc_security_group_ids = [aws_security_group.instance.id]
 
   user_data = base64encode(<<-EOF
     #!/bin/bash
@@ -136,7 +123,15 @@ resource "aws_launch_template" "web" {
     yum install -y httpd
     systemctl enable httpd
     systemctl start httpd
-    echo "<h1>Web tier - $(hostname -f)</h1><p>Talks to app tier at: ${var.app_alb_dns_name}</p>" > /var/www/html/index.html
+    cat > /var/www/html/index.html <<'HTML'
+    <html>
+      <head><title>${var.project_name} - web tier</title></head>
+      <body>
+        <h1>${var.project_name} web tier</h1>
+        <p>Served by $(hostname -f) in $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)</p>
+      </body>
+    </html>
+    HTML
   EOF
   )
 
@@ -146,20 +141,18 @@ resource "aws_launch_template" "web" {
       Name = "${var.project_name}-web"
     }
   }
-
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
 resource "aws_autoscaling_group" "web" {
-  name_prefix         = "${var.project_name}-web-"
-  desired_capacity     = var.asg_desired_capacity
-  min_size             = var.asg_min_size
-  max_size             = var.asg_max_size
-  vpc_zone_identifier  = var.public_subnet_ids
-  target_group_arns    = [aws_lb_target_group.web.arn]
-  health_check_type    = "ELB"
+  name                = "${var.project_name}-web-asg"
+  vpc_zone_identifier = var.public_subnet_ids
+  target_group_arns   = [aws_lb_target_group.web.arn]
+
+  min_size         = var.asg_min_size
+  max_size         = var.asg_max_size
+  desired_capacity = var.asg_desired_capacity
+
+  health_check_type         = "ELB"
   health_check_grace_period = 60
 
   launch_template {
@@ -171,9 +164,5 @@ resource "aws_autoscaling_group" "web" {
     key                 = "Name"
     value               = "${var.project_name}-web"
     propagate_at_launch = true
-  }
-
-  lifecycle {
-    create_before_destroy = true
   }
 }

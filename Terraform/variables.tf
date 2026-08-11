@@ -30,10 +30,44 @@ variable "az_count" {
   default     = 2
 }
 
+variable "availability_zones" {
+  description = <<-EOT
+    AZs to use, in order. Some sandbox/training accounts attach a Service
+    Control Policy that explicitly denies ec2:DescribeAvailabilityZones, which
+    breaks the usual `data "aws_availability_zones"` lookup. Supplying the
+    list directly avoids that API call entirely. Defaults cover eu-west-2;
+    change these if you deploy to a different region.
+  EOT
+  type        = list(string)
+  default     = ["eu-west-2a", "eu-west-2b", "eu-west-2c"]
+}
+
 variable "single_nat_gateway" {
   description = "Use one NAT Gateway for all AZs (cheaper, less resilient) instead of one per AZ"
   type        = bool
   default     = true
+}
+
+# --- AMI ---
+
+variable "amazon_linux_2_ami_id" {
+  description = <<-EOT
+    AMI ID for Amazon Linux 2 (x86_64, HVM) to use for both the web and app
+    tier instances. Some sandbox/training accounts attach a Service Control
+    Policy that explicitly denies ssm:GetParameter, which breaks the usual
+    `data "aws_ssm_parameter"` lookup of the "latest" AMI. Supplying the ID
+    directly avoids that API call entirely.
+
+    Find a current one via the EC2 console: Launch Instance -> search
+    "Amazon Linux 2 AMI" -> copy the AMI ID shown for your region. Or, if
+    ec2:DescribeImages is NOT blocked in your account:
+      aws ec2 describe-images --owners amazon \
+        --filters "Name=name,Values=amzn2-ami-hvm-2.0.*-x86_64-gp2" \
+                  "Name=state,Values=available" \
+        --query "reverse(sort_by(Images, &CreationDate))[:1].ImageId" \
+        --region eu-west-2 --output text
+  EOT
+  type        = string
 }
 
 # --- Web tier (public-facing ALB + ASG) ---

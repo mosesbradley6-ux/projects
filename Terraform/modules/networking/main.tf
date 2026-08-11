@@ -1,13 +1,15 @@
-data "aws_availability_zones" "available" {
-  state = "available"
-}
+# NOTE: No `data "aws_availability_zones" "available" {}` here on purpose.
+# In sandbox/training accounts, ec2:DescribeAvailabilityZones is sometimes
+# explicitly denied by an org-level SCP, which breaks that lookup. Instead
+# we take the AZ list as an input variable from root (var.availability_zones)
+# and just slice it down to az_count.
 
 locals {
-  azs = slice(data.aws_availability_zones.available.names, 0, var.az_count)
+  azs = slice(var.availability_zones, 0, var.az_count)
 
-  public_subnet_cidrs  = [for i in range(var.az_count) : cidrsubnet(var.vpc_cidr, 8, i)]        # 10.0.0.0/24, 10.0.1.0/24 ...
-  app_subnet_cidrs     = [for i in range(var.az_count) : cidrsubnet(var.vpc_cidr, 8, i + 10)]    # 10.0.10.0/24 ...
-  db_subnet_cidrs      = [for i in range(var.az_count) : cidrsubnet(var.vpc_cidr, 8, i + 20)]    # 10.0.20.0/24 ...
+  public_subnet_cidrs = [for i in range(var.az_count) : cidrsubnet(var.vpc_cidr, 8, i)]        # 10.0.0.0/24, 10.0.1.0/24, ...
+  app_subnet_cidrs    = [for i in range(var.az_count) : cidrsubnet(var.vpc_cidr, 8, i + 10)]    # 10.0.10.0/24, 10.0.11.0/24, ...
+  db_subnet_cidrs     = [for i in range(var.az_count) : cidrsubnet(var.vpc_cidr, 8, i + 20)]    # 10.0.20.0/24, 10.0.21.0/24, ...
 }
 
 # --- VPC ---
@@ -69,7 +71,7 @@ resource "aws_subnet" "db" {
   }
 }
 
-# --- NAT Gateway(s) for private subnet outbound access ---
+# --- NAT Gateway(s) for the app subnets' outbound internet access ---
 
 resource "aws_eip" "nat" {
   count  = var.single_nat_gateway ? 1 : var.az_count
@@ -113,7 +115,7 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-resource "aws_route_table" "private" {
+resource "aws_route_table" "app" {
   count  = var.az_count
   vpc_id = aws_vpc.this.id
 
@@ -123,18 +125,27 @@ resource "aws_route_table" "private" {
   }
 
   tags = {
-    Name = "${var.project_name}-private-rt-${count.index}"
+    Name = "${var.project_name}-app-rt-${count.index}"
   }
 }
 
 resource "aws_route_table_association" "app" {
   count          = var.az_count
   subnet_id      = aws_subnet.app[count.index].id
-  route_table_id = aws_route_table.private[count.index].id
+  route_table_id = aws_route_table.app[count.index].id
+}
+
+# DB subnets: no route to the internet at all (private, isolated).
+resource "aws_route_table" "db" {
+  vpc_id = aws_vpc.this.id
+
+  tags = {
+    Name = "${var.project_name}-db-rt"
+  }
 }
 
 resource "aws_route_table_association" "db" {
   count          = var.az_count
   subnet_id      = aws_subnet.db[count.index].id
-  route_table_id = aws_route_table.private[count.index].id
+  route_table_id = aws_route_table.db.id
 }

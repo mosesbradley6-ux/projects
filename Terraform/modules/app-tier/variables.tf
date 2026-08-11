@@ -11,7 +11,12 @@ variable "app_subnet_ids" {
 }
 
 variable "web_instance_security_group_id" {
-  description = "Security group ID of the web tier instances, used to scope inbound access"
+  description = "Security group ID of the web tier instances - allowed to reach this tier's internal ALB"
+  type        = string
+}
+
+variable "ami_id" {
+  description = "AMI ID to launch (passed in from root - see root variables.tf for why this isn't a data source)."
   type        = string
 }
 

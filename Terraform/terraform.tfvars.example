@@ -5,6 +5,17 @@ aws_region   = "eu-west-2"
 project_name = "sample3tier"
 environment  = "test"
 
+# --- Sandbox / SCP workaround values ---
+# Some sandbox/training AWS accounts attach a Service Control Policy that
+# explicitly denies ec2:DescribeAvailabilityZones and ssm:GetParameter.
+# If you hit AccessDeniedException / "explicit deny in a service control
+# policy" errors on those calls, these two variables let the config skip
+# them entirely. If your account isn't restricted, the defaults below are
+# fine to leave as-is (or delete these lines to fall back to the defaults
+# in variables.tf).
+availability_zones    = ["eu-west-2a", "eu-west-2b", "eu-west-2c"]
+amazon_linux_2_ami_id = "ami-0eb260c4d5475b901" # replace with a current AMI ID for your region - see variables.tf for how to look one up
+
 key_name         = ""              # existing EC2 key pair name, or leave blank
 ssh_allowed_cidr = "0.0.0.0/0"     # restrict this to your IP in real use, e.g. "203.0.113.5/32"
 
