@@ -1,0 +1,16 @@
+# Copy this file to terraform.tfvars and fill in your own values.
+# Do NOT commit terraform.tfvars (it will contain secrets) - it's already in .gitignore.
+
+aws_region   = "eu-west-2"
+project_name = "sample3tier"
+environment  = "test"
+
+key_name         = ""              # existing EC2 key pair name, or leave blank
+ssh_allowed_cidr = "0.0.0.0/0"     # restrict this to your IP in real use, e.g. "203.0.113.5/32"
+
+db_name     = "appdb"
+db_username = "dbadmin"
+# Do not hardcode a real password here - set it via:
+#   export TF_VAR_db_password="your-strong-password"
+# or pass -var="db_password=..." on the command line.
+db_password = "changeme-please-override"
