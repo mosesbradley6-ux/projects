@@ -14,7 +14,7 @@ environment  = "test"
 # fine to leave as-is (or delete these lines to fall back to the defaults
 # in variables.tf).
 availability_zones    = ["us-east-1a", "us-east-1b", "us-east-1c"]
-amazon_linux_2_ami_id = "ami-xxxxxxxxxxxxxxxxx" # replace with a current AMI ID for your region - see variables.tf for how to look one up
+amazon_linux_2_ami_id = "ami-0bdc7d025135d7b49"
 
 key_name         = ""              # existing EC2 key pair name, or leave blank
 ssh_allowed_cidr = "0.0.0.0/0"     # restrict this to your IP in real use, e.g. "203.0.113.5/32"
