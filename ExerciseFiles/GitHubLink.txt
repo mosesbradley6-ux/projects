@@ -1,0 +1,1 @@
+You can always find the latest version of these files on GitHub: https://github.com/ned1313/Getting-Started-Terraform
